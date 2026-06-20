@@ -1,0 +1,59 @@
+# Static analysis config for Juno.
+#
+# Base: flutter_lints. We then tighten the analyzer to treat sloppiness as an
+# error so the pre-commit hook (`flutter analyze`) is a real gate, not advisory.
+#
+# NOTE: riverpod_lint/custom_lint are intentionally NOT enabled yet. As of the
+# current SDK, riverpod_lint 3.1.4 requires analyzer_plugin ^0.14 while the
+# latest custom_lint still pins ^0.13, so the two cannot co-resolve. Re-enable
+# by adding `custom_lint` + `riverpod_lint` to dev_dependencies and the
+# `custom_lint` analyzer plugin below once custom_lint ships analyzer_plugin 0.14.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # Treat these normally-warning categories as hard errors.
+  errors:
+    invalid_annotation_target: ignore # noisy with Riverpod/freezed-style codegen
+    missing_required_param: error
+    missing_return: error
+    must_be_immutable: error
+    avoid_dynamic_calls: error
+    unawaited_futures: error
+    always_declare_return_types: error
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  exclude:
+    - "**/*.g.dart" # generated (riverpod)
+    - "**/*.freezed.dart"
+    - "**/*.drift.dart" # generated (drift)
+    - "build/**"
+
+linter:
+  rules:
+    # Correctness
+    - always_use_package_imports
+    - avoid_dynamic_calls
+    - avoid_slow_async_io
+    - cancel_subscriptions
+    - close_sinks
+    - throw_in_finally
+    - unawaited_futures
+    - test_types_in_equals
+    - no_adjacent_strings_in_list
+    # Style / consistency
+    - always_declare_return_types
+    - prefer_single_quotes
+    - prefer_final_locals
+    - prefer_final_in_for_each
+    - directives_ordering
+    - combinators_ordering
+    - sort_child_properties_last
+    - unnecessary_lambdas
+    - unnecessary_parenthesis
+    - require_trailing_commas
+    - use_named_constants
+    - use_super_parameters
+    # API hygiene
+    - avoid_print # use a logger; never print SQL/credentials

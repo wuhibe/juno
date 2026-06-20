@@ -1,0 +1,59 @@
+{
+  "name": "juno-tooling",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Repo tooling only (commit linting + git hooks). The app itself is Flutter/Dart — see pubspec.yaml.",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.7"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ],
+    "rules": {
+      "scope-enum": [
+        2,
+        "always",
+        [
+          "core",
+          "theme",
+          "router",
+          "db",
+          "adapter",
+          "postgres",
+          "data",
+          "connections",
+          "browser",
+          "editor",
+          "results",
+          "history",
+          "deps",
+          "ci",
+          "tooling",
+          "release"
+        ]
+      ],
+      "scope-empty": [
+        0
+      ],
+      "subject-case": [
+        2,
+        "never",
+        [
+          "sentence-case",
+          "start-case",
+          "pascal-case",
+          "upper-case"
+        ]
+      ],
+      "body-max-line-length": [
+        0
+      ]
+    }
+  }
+}

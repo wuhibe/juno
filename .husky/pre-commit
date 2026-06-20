@@ -1,0 +1,25 @@
+# Resolve the Flutter/Dart toolchain. Prefer FVM (per-project pinned SDK).
+if command -v fvm >/dev/null 2>&1 && [ -f .fvmrc ]; then
+  DART="fvm dart"
+  FLUTTER="fvm flutter"
+elif command -v flutter >/dev/null 2>&1; then
+  DART="dart"
+  FLUTTER="flutter"
+else
+  echo "⚠️  Flutter toolchain not found — skipping format/analyze pre-commit checks."
+  exit 0
+fi
+
+# Fail the commit if any committed Dart code is not formatted.
+echo "→ dart format (verify)…"
+$DART format --output=none --set-exit-if-changed lib test || {
+  echo "✗ Code is not formatted. Run: $DART format lib test"
+  exit 1
+}
+
+# Fail the commit on any analyzer issue (lints are errors here — see analysis_options.yaml).
+echo "→ flutter analyze…"
+$FLUTTER analyze || {
+  echo "✗ Static analysis found issues. Fix them before committing."
+  exit 1
+}
