@@ -65,6 +65,14 @@ class WorkspaceShellScreen extends ConsumerWidget {
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.pushNamed(
+          AppRoute.editor.name,
+          pathParameters: <String, String>{'id': connectionId},
+        ),
+        icon: const Icon(Icons.code_rounded),
+        label: const Text('SQL editor'),
+      ),
       body: SchemaBrowser(connectionId: connectionId),
     );
   }

@@ -95,6 +95,13 @@ AppException mapPostgresSqlState(
   StackTrace? stackTrace,
 }) {
   switch (code) {
+    // 57014 — query_canceled: a user-requested cancellation landed server-side.
+    case '57014':
+      return QueryCancelledException(
+        'Query cancelled.',
+        cause: cause,
+        stackTrace: stackTrace,
+      );
     // Class 25 — read_only_sql_transaction: the read-only guarantee firing.
     case '25006':
       return ReadOnlyViolationException(

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:juno/features/browser/presentation/table_preview_screen.dart';
 import 'package:juno/features/connections/presentation/connection_editor_screen.dart';
 import 'package:juno/features/connections/presentation/connections_list_screen.dart';
+import 'package:juno/features/editor/presentation/editor_screen.dart';
 import 'package:juno/features/workspace/workspace_shell_screen.dart';
 
 /// Named routes, kept in one enum so navigation never hardcodes strings.
@@ -21,7 +22,10 @@ enum AppRoute {
   workspace('/workspace/:id'),
 
   /// A table preview within a connection (`:id`); target passed via `extra`.
-  tablePreview('/workspace/:id/table');
+  tablePreview('/workspace/:id/table'),
+
+  /// The SQL editor for a connection (`:id`).
+  editor('/workspace/:id/editor');
 
   const AppRoute(this.path);
 
@@ -62,6 +66,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: AppRoute.tablePreview.name,
         builder: (context, state) =>
             TablePreviewScreen(args: state.extra! as TablePreviewArgs),
+      ),
+      GoRoute(
+        path: AppRoute.editor.path,
+        name: AppRoute.editor.name,
+        builder: (context, state) =>
+            EditorScreen(connectionId: state.pathParameters['id']!),
       ),
     ],
   );

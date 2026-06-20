@@ -5,8 +5,10 @@ import 'package:juno/core/errors/app_exception.dart';
 import 'package:juno/core/theme/app_spacing.dart';
 import 'package:juno/core/theme/app_typography.dart';
 import 'package:juno/core/theme/juno_colors.dart';
+import 'package:juno/db/adapter/models/query_result.dart';
 import 'package:juno/features/browser/application/table_preview_provider.dart';
-import 'package:juno/features/results/presentation/query_result_view.dart';
+import 'package:juno/features/results/presentation/cell_viewer_sheet.dart';
+import 'package:juno/features/results/presentation/results_grid.dart';
 
 /// Schema + table identifying a preview target, passed via go_router `extra`.
 class TablePreviewArgs {
@@ -44,8 +46,67 @@ class TablePreviewScreen extends ConsumerWidget {
       body: previewAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _PreviewError(error: error),
-        data: (result) => QueryResultView(result: result),
+        data: (result) => _PreviewBody(result: result),
       ),
+    );
+  }
+}
+
+class _PreviewBody extends StatelessWidget {
+  const _PreviewBody({required this.result});
+
+  final QueryResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.juno;
+
+    if (result.columns.isEmpty) {
+      return Center(
+        child: Text(
+          'No columns returned',
+          style: theme.textTheme.bodyMedium?.copyWith(color: colors.textMuted),
+        ),
+      );
+    }
+
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: ResultsGrid(
+            columns: result.columns,
+            rows: result.rows,
+            onViewCell: (column, value) =>
+                CellViewerSheet.show(context, column: column, value: value),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: colors.surfaceAlt,
+            border: Border(top: BorderSide(color: colors.border)),
+          ),
+          child: Row(
+            children: <Widget>[
+              Text(
+                '${result.rowCount} rows (preview)',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colors.textMuted,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${result.elapsed.inMilliseconds} ms',
+                style: AppTypography.mono(11, color: colors.textMuted),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
