@@ -123,3 +123,18 @@ class ActiveConnection extends _$ActiveConnection {
     }
   }
 }
+
+/// The live adapter for the active connection.
+///
+/// Throws [StateError] when no connection is open, so dependent providers
+/// surface a clean error state rather than silently doing nothing. Recomputes
+/// whenever the connection changes, which transitively invalidates the schema
+/// cache and any running queries.
+@riverpod
+DatabaseAdapter activeAdapter(Ref ref) {
+  final status = ref.watch(activeConnectionProvider);
+  if (status is ConnectionConnected) {
+    return status.adapter;
+  }
+  throw StateError('No active database connection.');
+}

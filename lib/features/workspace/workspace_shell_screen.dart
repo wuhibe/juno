@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:juno/core/router/app_router.dart';
-import 'package:juno/core/theme/app_radii.dart';
 import 'package:juno/core/theme/app_spacing.dart';
 import 'package:juno/core/theme/juno_colors.dart';
+import 'package:juno/data/data_providers.dart';
+import 'package:juno/features/browser/application/schema_cache_provider.dart';
+import 'package:juno/features/browser/presentation/schema_browser.dart';
 import 'package:juno/features/connections/application/active_connection_provider.dart';
 
-/// The connected workspace.
-///
-/// In Phase 3 this is the landing surface that proves the connect flow works;
-/// Phase 4 fills it with the schema browser and table previews.
+/// The connected workspace: hosts the schema browser (Phase 4). The SQL editor
+/// and results grid are layered in next (Phase 5).
 class WorkspaceShellScreen extends ConsumerWidget {
   /// Creates the workspace shell for [connectionId].
   const WorkspaceShellScreen({required this.connectionId, super.key});
@@ -21,8 +21,7 @@ class WorkspaceShellScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final colors = theme.juno;
+    final colors = Theme.of(context).juno;
     final status = ref.watch(activeConnectionProvider);
 
     // If the connection isn't live (e.g. after disconnect or a deep link),
@@ -36,12 +35,23 @@ class WorkspaceShellScreen extends ConsumerWidget {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    final adapter = status.adapter;
+    final showSystem = ref.watch(showSystemSchemasProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workspace'),
+        title: Text(_title(ref)),
         actions: <Widget>[
+          IconButton(
+            icon: Icon(
+              showSystem
+                  ? Icons.visibility_rounded
+                  : Icons.visibility_off_rounded,
+              color: showSystem ? colors.accent : colors.textMuted,
+            ),
+            tooltip: showSystem ? 'Hide system schemas' : 'Show system schemas',
+            onPressed: () =>
+                ref.read(showSystemSchemasProvider.notifier).toggle(),
+          ),
           IconButton(
             icon: const Icon(Icons.link_off_rounded),
             tooltip: 'Disconnect',
@@ -52,51 +62,22 @@ class WorkspaceShellScreen extends ConsumerWidget {
               }
             },
           ),
+          const SizedBox(width: AppSpacing.xs),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                decoration: BoxDecoration(
-                  color: colors.success.withValues(alpha: 0.14),
-                  borderRadius: AppRadii.xlAll,
-                  border: Border.all(
-                    color: colors.success.withValues(alpha: 0.5),
-                  ),
-                ),
-                child: Icon(
-                  Icons.check_circle_outline_rounded,
-                  size: 40,
-                  color: colors.success,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Text('Connected', style: theme.textTheme.headlineSmall),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Schema browser and SQL editor arrive next.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colors.textMuted,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              if (adapter.kind.name.isNotEmpty)
-                Text(
-                  'Engine: ${adapter.kind.name}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colors.textFaint,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
+      body: SchemaBrowser(connectionId: connectionId),
     );
+  }
+
+  String _title(WidgetRef ref) {
+    final connections = ref.watch(connectionsListProvider).value;
+    if (connections != null) {
+      for (final connection in connections) {
+        if (connection.id == connectionId) {
+          return connection.name;
+        }
+      }
+    }
+    return 'Workspace';
   }
 }

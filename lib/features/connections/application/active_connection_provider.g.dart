@@ -81,3 +81,65 @@ abstract class _$ActiveConnection extends $Notifier<ConnectionStatus> {
     return element.handleCreate(ref, build);
   }
 }
+
+/// The live adapter for the active connection.
+///
+/// Throws [StateError] when no connection is open, so dependent providers
+/// surface a clean error state rather than silently doing nothing. Recomputes
+/// whenever the connection changes, which transitively invalidates the schema
+/// cache and any running queries.
+
+@ProviderFor(activeAdapter)
+final activeAdapterProvider = ActiveAdapterProvider._();
+
+/// The live adapter for the active connection.
+///
+/// Throws [StateError] when no connection is open, so dependent providers
+/// surface a clean error state rather than silently doing nothing. Recomputes
+/// whenever the connection changes, which transitively invalidates the schema
+/// cache and any running queries.
+
+final class ActiveAdapterProvider
+    extends
+        $FunctionalProvider<DatabaseAdapter, DatabaseAdapter, DatabaseAdapter>
+    with $Provider<DatabaseAdapter> {
+  /// The live adapter for the active connection.
+  ///
+  /// Throws [StateError] when no connection is open, so dependent providers
+  /// surface a clean error state rather than silently doing nothing. Recomputes
+  /// whenever the connection changes, which transitively invalidates the schema
+  /// cache and any running queries.
+  ActiveAdapterProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'activeAdapterProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activeAdapterHash();
+
+  @$internal
+  @override
+  $ProviderElement<DatabaseAdapter> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DatabaseAdapter create(Ref ref) {
+    return activeAdapter(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DatabaseAdapter value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DatabaseAdapter>(value),
+    );
+  }
+}
+
+String _$activeAdapterHash() => r'3136e94e4889453f06189dde9d009f01cdb201a8';

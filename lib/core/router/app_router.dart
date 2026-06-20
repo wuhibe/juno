@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:juno/features/browser/presentation/table_preview_screen.dart';
 import 'package:juno/features/connections/presentation/connection_editor_screen.dart';
 import 'package:juno/features/connections/presentation/connections_list_screen.dart';
 import 'package:juno/features/workspace/workspace_shell_screen.dart';
@@ -17,7 +18,10 @@ enum AppRoute {
   connectionEdit('/connections/:id/edit'),
 
   /// The connected workspace (`:id`).
-  workspace('/workspace/:id');
+  workspace('/workspace/:id'),
+
+  /// A table preview within a connection (`:id`); target passed via `extra`.
+  tablePreview('/workspace/:id/table');
 
   const AppRoute(this.path);
 
@@ -52,6 +56,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         name: AppRoute.workspace.name,
         builder: (context, state) =>
             WorkspaceShellScreen(connectionId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppRoute.tablePreview.path,
+        name: AppRoute.tablePreview.name,
+        builder: (context, state) =>
+            TablePreviewScreen(args: state.extra! as TablePreviewArgs),
       ),
     ],
   );
