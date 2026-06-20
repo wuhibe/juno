@@ -49,7 +49,12 @@ app.*.map.json
 
 # Node tooling (commitlint + husky live in package.json — app code is Dart)
 /node_modules/
+devtools_options.yaml
 
 # Project documentation/design (local references only)
 mobile-db-client-plan.md
 Juno Design System.html
+
+# Skills
+.agents
+skills-lock.json
