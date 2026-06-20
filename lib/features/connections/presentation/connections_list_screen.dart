@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:juno/core/branding/juno_logo.dart';
 import 'package:juno/core/router/app_router.dart';
 import 'package:juno/core/theme/app_radii.dart';
 import 'package:juno/core/theme/app_spacing.dart';
@@ -41,7 +42,16 @@ class ConnectionsListScreen extends ConsumerWidget {
         : null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Juno')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const <Widget>[
+            JunoLogo(size: 40),
+            SizedBox(width: AppSpacing.xxs),
+            Text('Juno'),
+          ],
+        ),
+      ),
       floatingActionButton: connectionsAsync.maybeWhen(
         data: (list) => list.isEmpty
             ? null
@@ -156,11 +166,7 @@ class _EmptyState extends ConsumerWidget {
                 borderRadius: AppRadii.xlAll,
                 border: Border.all(color: colors.border),
               ),
-              child: Icon(
-                Icons.storage_rounded,
-                size: 40,
-                color: colors.accent,
-              ),
+              child: const JunoLogo(size: 56),
             ),
             const SizedBox(height: AppSpacing.xxl),
             Text('No connections yet', style: theme.textTheme.headlineSmall),

@@ -1,0 +1,79 @@
+name: Release
+
+# Cuts a GitHub Release whenever a new version lands on main.
+#
+# The release tag is derived from pubspec.yaml's `version:` (e.g. 1.2.0+5 -> v1.2.0).
+# A run is a no-op unless that version has not been released yet, so bump the
+# pubspec version in your PR and merging it publishes the release. Release notes
+# are generated from the commits since the previous tag (Conventional Commits).
+
+on:
+  push:
+    branches: [main]
+
+# One release run at a time; don't cancel an in-flight publish.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: version
+        run: |
+          version_line=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version://; s/[[:space:]]//g')
+          semver=${version_line%%+*}
+          tag="v${semver}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release ${tag} already exists — skipping."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Will publish release ${tag}."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Java
+        if: steps.version.outputs.exists == 'false'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        if: steps.version.outputs.exists == 'false'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.2
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        if: steps.version.outputs.exists == 'false'
+        run: flutter pub get
+
+      - name: Build Android APK
+        if: steps.version.outputs.exists == 'false'
+        run: flutter build apk --release
+
+      - name: Publish release
+        if: steps.version.outputs.exists == 'false'
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "Juno ${{ steps.version.outputs.tag }}" \
+            --generate-notes \
+            build/app/outputs/flutter-apk/app-release.apk
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
