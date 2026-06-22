@@ -7,7 +7,9 @@ import 'package:juno/core/theme/app_typography.dart';
 import 'package:juno/core/theme/juno_colors.dart';
 import 'package:juno/data/data_providers.dart';
 import 'package:juno/features/editor/application/query_runner_provider.dart';
+import 'package:juno/features/editor/domain/sql_statement.dart';
 import 'package:juno/features/editor/presentation/widgets/sql_code_field.dart';
+import 'package:juno/features/editor/presentation/widgets/write_warning_dialog.dart';
 import 'package:juno/features/results/presentation/cell_viewer_sheet.dart';
 import 'package:juno/features/results/presentation/results_grid.dart';
 import 'package:re_editor/re_editor.dart';
@@ -33,11 +35,37 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     super.dispose();
   }
 
-  void _run() => ref.read(queryRunnerProvider.notifier).run(_controller.text);
+  Future<void> _run() async {
+    final sql = _controller.text;
+    // Layer 2 (UX): warn before letting the server reject a write on a
+    // read-only connection (plan §4). The server is still the guarantee.
+    if (_readOnly(listen: false)) {
+      final statement = SqlStatement.classify(sql);
+      if (statement.kind == StatementKind.write ||
+          statement.kind == StatementKind.ddl) {
+        final runAnyway = await WriteWarningDialog.show(
+          context,
+          keyword: statement.firstKeyword.toUpperCase(),
+        );
+        if (!runAnyway) {
+          return;
+        }
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    await ref.read(queryRunnerProvider.notifier).run(sql);
+  }
+
   void _cancel() => ref.read(queryRunnerProvider.notifier).cancel();
 
-  bool get _isReadOnly {
-    final connections = ref.watch(connectionsListProvider).value;
+  /// Whether the active connection is read-only. Pass [listen] `true` from
+  /// `build` (to rebuild the badge) and `false` from callbacks.
+  bool _readOnly({required bool listen}) {
+    final connections = listen
+        ? ref.watch(connectionsListProvider).value
+        : ref.read(connectionsListProvider).value;
     if (connections == null) {
       return false;
     }
@@ -59,7 +87,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       appBar: AppBar(
         title: const Text('SQL editor'),
         actions: <Widget>[
-          if (_isReadOnly)
+          if (_readOnly(listen: true))
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.md),
               child: Row(

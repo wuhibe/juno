@@ -1,3 +1,5 @@
+import 'package:juno/features/editor/domain/sql_tokenizer.dart';
+
 /// The broad category of a SQL statement.
 enum StatementKind {
   /// A read: `SELECT`, `TABLE`, `VALUES`, `SHOW`, `EXPLAIN`.
@@ -79,8 +81,9 @@ class SqlStatement {
   /// Classifies [sql].
   static SqlStatement classify(String sql) {
     final normalized = _normalize(sql);
-    final stripped = _stripCommentsAndLiterals(sql);
-    final words = _words(stripped);
+    final words = SqlTokenizer.tokenize(
+      sql,
+    ).map((token) => token.lower).toList();
 
     final first = words.isEmpty ? '' : words.first;
     final hasLimit = words.contains('limit');
@@ -108,87 +111,5 @@ class SqlStatement {
       result = result.substring(0, result.length - 1).trimRight();
     }
     return result;
-  }
-
-  /// Replaces comments and string/identifier/dollar-quoted literals with spaces
-  /// so keyword scanning never trips on their contents.
-  static String _stripCommentsAndLiterals(String sql) {
-    final out = StringBuffer();
-    final chars = sql.split('');
-    var i = 0;
-    final n = chars.length;
-
-    while (i < n) {
-      final c = chars[i];
-      final next = i + 1 < n ? chars[i + 1] : '';
-
-      // Line comment: -- ... EOL
-      if (c == '-' && next == '-') {
-        while (i < n && chars[i] != '\n') {
-          i++;
-        }
-        continue;
-      }
-      // Block comment: /* ... */
-      if (c == '/' && next == '*') {
-        i += 2;
-        while (i < n &&
-            !(chars[i] == '*' && i + 1 < n && chars[i + 1] == '/')) {
-          i++;
-        }
-        i += 2;
-        out.write(' ');
-        continue;
-      }
-      // Single-quoted string (with '' escape)
-      if (c == "'") {
-        i++;
-        while (i < n) {
-          if (chars[i] == "'") {
-            if (i + 1 < n && chars[i + 1] == "'") {
-              i += 2;
-              continue;
-            }
-            i++;
-            break;
-          }
-          i++;
-        }
-        out.write(' ');
-        continue;
-      }
-      // Double-quoted identifier
-      if (c == '"') {
-        i++;
-        while (i < n && chars[i] != '"') {
-          i++;
-        }
-        i++;
-        out.write(' ');
-        continue;
-      }
-      // Dollar-quoted string: $tag$ ... $tag$
-      if (c == r'$') {
-        final tagEnd = sql.indexOf(r'$', i + 1);
-        if (tagEnd != -1) {
-          final tag = sql.substring(i, tagEnd + 1);
-          final close = sql.indexOf(tag, tagEnd + 1);
-          if (close != -1) {
-            i = close + tag.length;
-            out.write(' ');
-            continue;
-          }
-        }
-      }
-      out.write(c);
-      i++;
-    }
-    return out.toString();
-  }
-
-  static List<String> _words(String stripped) {
-    return RegExp(
-      r'[A-Za-z_][A-Za-z0-9_]*',
-    ).allMatches(stripped).map((m) => m.group(0)!.toLowerCase()).toList();
   }
 }
