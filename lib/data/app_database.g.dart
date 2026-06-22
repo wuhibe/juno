@@ -1369,12 +1369,233 @@ class QueryHistoryEntriesCompanion extends UpdateCompanion<QueryHistoryRow> {
   }
 }
 
+class $SnippetFavoritesTable extends SnippetFavorites
+    with TableInfo<$SnippetFavoritesTable, SnippetFavoriteRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SnippetFavoritesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [label, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'snippet_favorites';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SnippetFavoriteRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {label};
+  @override
+  SnippetFavoriteRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SnippetFavoriteRow(
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $SnippetFavoritesTable createAlias(String alias) {
+    return $SnippetFavoritesTable(attachedDatabase, alias);
+  }
+}
+
+class SnippetFavoriteRow extends DataClass
+    implements Insertable<SnippetFavoriteRow> {
+  /// The pinned chip's label (e.g. `SELECT`, `WHERE`).
+  final String label;
+
+  /// Ordering within the favorites group (lower = earlier).
+  final int sortOrder;
+  const SnippetFavoriteRow({required this.label, required this.sortOrder});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['label'] = Variable<String>(label);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  SnippetFavoritesCompanion toCompanion(bool nullToAbsent) {
+    return SnippetFavoritesCompanion(
+      label: Value(label),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory SnippetFavoriteRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SnippetFavoriteRow(
+      label: serializer.fromJson<String>(json['label']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'label': serializer.toJson<String>(label),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  SnippetFavoriteRow copyWith({String? label, int? sortOrder}) =>
+      SnippetFavoriteRow(
+        label: label ?? this.label,
+        sortOrder: sortOrder ?? this.sortOrder,
+      );
+  SnippetFavoriteRow copyWithCompanion(SnippetFavoritesCompanion data) {
+    return SnippetFavoriteRow(
+      label: data.label.present ? data.label.value : this.label,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SnippetFavoriteRow(')
+          ..write('label: $label, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(label, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SnippetFavoriteRow &&
+          other.label == this.label &&
+          other.sortOrder == this.sortOrder);
+}
+
+class SnippetFavoritesCompanion extends UpdateCompanion<SnippetFavoriteRow> {
+  final Value<String> label;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const SnippetFavoritesCompanion({
+    this.label = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SnippetFavoritesCompanion.insert({
+    required String label,
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : label = Value(label);
+  static Insertable<SnippetFavoriteRow> custom({
+    Expression<String>? label,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (label != null) 'label': label,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SnippetFavoritesCompanion copyWith({
+    Value<String>? label,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return SnippetFavoritesCompanion(
+      label: label ?? this.label,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SnippetFavoritesCompanion(')
+          ..write('label: $label, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ConnectionsTable connections = $ConnectionsTable(this);
   late final $QueryHistoryEntriesTable queryHistoryEntries =
       $QueryHistoryEntriesTable(this);
+  late final $SnippetFavoritesTable snippetFavorites = $SnippetFavoritesTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1382,6 +1603,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     connections,
     queryHistoryEntries,
+    snippetFavorites,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -2269,6 +2491,159 @@ typedef $$QueryHistoryEntriesTableProcessedTableManager =
       QueryHistoryRow,
       PrefetchHooks Function({bool connectionId})
     >;
+typedef $$SnippetFavoritesTableCreateCompanionBuilder =
+    SnippetFavoritesCompanion Function({
+      required String label,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+typedef $$SnippetFavoritesTableUpdateCompanionBuilder =
+    SnippetFavoritesCompanion Function({
+      Value<String> label,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+class $$SnippetFavoritesTableFilterComposer
+    extends Composer<_$AppDatabase, $SnippetFavoritesTable> {
+  $$SnippetFavoritesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SnippetFavoritesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SnippetFavoritesTable> {
+  $$SnippetFavoritesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SnippetFavoritesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SnippetFavoritesTable> {
+  $$SnippetFavoritesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+}
+
+class $$SnippetFavoritesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SnippetFavoritesTable,
+          SnippetFavoriteRow,
+          $$SnippetFavoritesTableFilterComposer,
+          $$SnippetFavoritesTableOrderingComposer,
+          $$SnippetFavoritesTableAnnotationComposer,
+          $$SnippetFavoritesTableCreateCompanionBuilder,
+          $$SnippetFavoritesTableUpdateCompanionBuilder,
+          (
+            SnippetFavoriteRow,
+            BaseReferences<
+              _$AppDatabase,
+              $SnippetFavoritesTable,
+              SnippetFavoriteRow
+            >,
+          ),
+          SnippetFavoriteRow,
+          PrefetchHooks Function()
+        > {
+  $$SnippetFavoritesTableTableManager(
+    _$AppDatabase db,
+    $SnippetFavoritesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SnippetFavoritesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SnippetFavoritesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SnippetFavoritesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> label = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SnippetFavoritesCompanion(
+                label: label,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String label,
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SnippetFavoritesCompanion.insert(
+                label: label,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SnippetFavoritesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SnippetFavoritesTable,
+      SnippetFavoriteRow,
+      $$SnippetFavoritesTableFilterComposer,
+      $$SnippetFavoritesTableOrderingComposer,
+      $$SnippetFavoritesTableAnnotationComposer,
+      $$SnippetFavoritesTableCreateCompanionBuilder,
+      $$SnippetFavoritesTableUpdateCompanionBuilder,
+      (
+        SnippetFavoriteRow,
+        BaseReferences<
+          _$AppDatabase,
+          $SnippetFavoritesTable,
+          SnippetFavoriteRow
+        >,
+      ),
+      SnippetFavoriteRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2277,4 +2652,6 @@ class $AppDatabaseManager {
       $$ConnectionsTableTableManager(_db, _db.connections);
   $$QueryHistoryEntriesTableTableManager get queryHistoryEntries =>
       $$QueryHistoryEntriesTableTableManager(_db, _db.queryHistoryEntries);
+  $$SnippetFavoritesTableTableManager get snippetFavorites =>
+      $$SnippetFavoritesTableTableManager(_db, _db.snippetFavorites);
 }

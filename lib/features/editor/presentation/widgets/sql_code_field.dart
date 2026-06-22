@@ -18,10 +18,13 @@ import 'package:re_highlight/languages/sql.dart';
 /// schema-aware autocomplete (keywords → tables → columns).
 class SqlCodeField extends ConsumerStatefulWidget {
   /// Creates the field bound to [controller].
-  const SqlCodeField({required this.controller, super.key});
+  const SqlCodeField({required this.controller, this.focusNode, super.key});
 
   /// The editing controller (owns the SQL text).
   final CodeLineEditingController controller;
+
+  /// The editor's focus node (shared so the snippet toolbar can keep focus).
+  final FocusNode? focusNode;
 
   @override
   ConsumerState<SqlCodeField> createState() => _SqlCodeFieldState();
@@ -67,6 +70,7 @@ class _SqlCodeFieldState extends ConsumerState<SqlCodeField> {
       ),
       child: CodeEditor(
         controller: widget.controller,
+        focusNode: widget.focusNode,
         wordWrap: false,
         autofocus: false,
         hint: 'SELECT * FROM …',

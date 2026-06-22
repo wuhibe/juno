@@ -8,6 +8,7 @@ import 'package:juno/core/theme/juno_colors.dart';
 import 'package:juno/data/data_providers.dart';
 import 'package:juno/features/editor/application/query_runner_provider.dart';
 import 'package:juno/features/editor/domain/sql_statement.dart';
+import 'package:juno/features/editor/presentation/widgets/snippet_toolbar.dart';
 import 'package:juno/features/editor/presentation/widgets/sql_code_field.dart';
 import 'package:juno/features/editor/presentation/widgets/write_warning_dialog.dart';
 import 'package:juno/features/results/presentation/cell_viewer_sheet.dart';
@@ -28,9 +29,11 @@ class EditorScreen extends ConsumerStatefulWidget {
 
 class _EditorScreenState extends ConsumerState<EditorScreen> {
   final CodeLineEditingController _controller = CodeLineEditingController();
+  final FocusNode _editorFocus = FocusNode();
 
   @override
   void dispose() {
+    _editorFocus.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -116,11 +119,21 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 color: colors.surface,
                 border: Border(bottom: BorderSide(color: colors.border)),
               ),
-              child: SqlCodeField(controller: _controller),
+              child: SqlCodeField(
+                controller: _controller,
+                focusNode: _editorFocus,
+              ),
             ),
           ),
           _Toolbar(running: running, onRun: _run, onCancel: _cancel),
           Expanded(flex: 3, child: _ResultsArea(state: state)),
+          // Always mounted (even while unfocused) so it survives modal sheets
+          // like the FROM table picker, which transiently steal focus.
+          SnippetToolbar(
+            controller: _controller,
+            focusNode: _editorFocus,
+            isReadOnly: _readOnly(listen: true),
+          ),
         ],
       ),
     );

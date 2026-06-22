@@ -83,8 +83,25 @@ class QueryHistoryEntries extends Table {
   TextColumn get errorSummary => text().nullable()();
 }
 
-/// The app's local SQLite database (saved connections + query history).
-@DriftDatabase(tables: <Type>[Connections, QueryHistoryEntries])
+/// Snippet chips the user has pinned to the front of the editor toolbar
+/// (plan §8 "favorites group"). Identified by the chip's label.
+@DataClassName('SnippetFavoriteRow')
+class SnippetFavorites extends Table {
+  /// The pinned chip's label (e.g. `SELECT`, `WHERE`).
+  TextColumn get label => text()();
+
+  /// Ordering within the favorites group (lower = earlier).
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  @override
+  Set<Column<Object>> get primaryKey => <Column<Object>>{label};
+}
+
+/// The app's local SQLite database (saved connections + query history +
+/// pinned snippet favorites).
+@DriftDatabase(
+  tables: <Type>[Connections, QueryHistoryEntries, SnippetFavorites],
+)
 class AppDatabase extends _$AppDatabase {
   /// Opens the on-device database (production), or wraps an injected
   /// [executor] (e.g. an in-memory database in tests).
@@ -92,10 +109,15 @@ class AppDatabase extends _$AppDatabase {
     : super(executor ?? driftDatabase(name: 'juno'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(snippetFavorites);
+      }
+    },
     beforeOpen: (details) async {
       // Required for the query_history -> connections cascade delete.
       await customStatement('PRAGMA foreign_keys = ON');

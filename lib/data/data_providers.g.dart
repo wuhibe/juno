@@ -214,6 +214,60 @@ final class QueryHistoryRepositoryProvider
 String _$queryHistoryRepositoryHash() =>
     r'c399551fe44a8a741f92afa24d6f02646c8a17aa';
 
+/// Repository for pinned snippet favorites.
+
+@ProviderFor(snippetFavoritesRepository)
+final snippetFavoritesRepositoryProvider =
+    SnippetFavoritesRepositoryProvider._();
+
+/// Repository for pinned snippet favorites.
+
+final class SnippetFavoritesRepositoryProvider
+    extends
+        $FunctionalProvider<
+          SnippetFavoritesRepository,
+          SnippetFavoritesRepository,
+          SnippetFavoritesRepository
+        >
+    with $Provider<SnippetFavoritesRepository> {
+  /// Repository for pinned snippet favorites.
+  SnippetFavoritesRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'snippetFavoritesRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$snippetFavoritesRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<SnippetFavoritesRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SnippetFavoritesRepository create(Ref ref) {
+    return snippetFavoritesRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SnippetFavoritesRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SnippetFavoritesRepository>(value),
+    );
+  }
+}
+
+String _$snippetFavoritesRepositoryHash() =>
+    r'4de5fb9e180048e0501f650c5ad2f5e03756969e';
+
 /// Live list of saved connections for the connection manager.
 
 @ProviderFor(connectionsList)
@@ -259,3 +313,47 @@ final class ConnectionsListProvider
 }
 
 String _$connectionsListHash() => r'c8429fcf14cff6833c3f6677b1a2175749314ffd';
+
+/// Live set of pinned snippet-chip labels for the editor toolbar.
+
+@ProviderFor(snippetFavorites)
+final snippetFavoritesProvider = SnippetFavoritesProvider._();
+
+/// Live set of pinned snippet-chip labels for the editor toolbar.
+
+final class SnippetFavoritesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<String>>,
+          List<String>,
+          Stream<List<String>>
+        >
+    with $FutureModifier<List<String>>, $StreamProvider<List<String>> {
+  /// Live set of pinned snippet-chip labels for the editor toolbar.
+  SnippetFavoritesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'snippetFavoritesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$snippetFavoritesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<String>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<String>> create(Ref ref) {
+    return snippetFavorites(ref);
+  }
+}
+
+String _$snippetFavoritesHash() => r'e5969864758d18afb697de1bfe277983b1667951';
