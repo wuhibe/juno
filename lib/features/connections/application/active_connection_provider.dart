@@ -52,6 +52,17 @@ class ConnectionFailed extends ConnectionStatus {
   final AppException error;
 }
 
+/// The socket died while backgrounded and a silent reconnect is in flight
+/// (plan §8.2). Distinct from [ConnectionConnecting] so the workspace can keep
+/// the user in place instead of bouncing them to the connection list.
+class ConnectionReconnecting extends ConnectionStatus {
+  /// Creates the reconnecting state.
+  const ConnectionReconnecting(this.connectionId);
+
+  /// The connection being re-opened.
+  final String connectionId;
+}
+
 /// Owns the single active database connection and its adapter.
 ///
 /// Holds the adapter lifecycle so the rest of the app talks to a live
@@ -76,24 +87,14 @@ class ActiveConnection extends _$ActiveConnection {
   /// connects (enforcing read-only server-side), and stamps it as used.
   Future<void> connect(String connectionId) async {
     state = ConnectionConnecting(connectionId);
-
-    final connections = ref.read(connectionsRepositoryProvider);
-    final credentials = ref.read(secureCredentialsRepositoryProvider);
-
     try {
-      final saved = await connections.getById(connectionId);
-      if (saved == null) {
-        throw StateError('Connection "$connectionId" no longer exists.');
-      }
-      final password = await credentials.readPassword(connectionId) ?? '';
-      final adapter = AdapterRegistry.create(saved.kind);
-      await adapter.connect(saved.toConnectionConfig(password: password));
+      final adapter = await _open(connectionId);
 
       // Replace any prior connection only after the new one is live.
       await _disconnectAdapter();
       _adapter = adapter;
 
-      await connections.markUsed(connectionId);
+      await ref.read(connectionsRepositoryProvider).markUsed(connectionId);
       state = ConnectionConnected(connectionId, adapter);
     } on AppException catch (error) {
       state = ConnectionFailed(connectionId, error);
@@ -107,6 +108,58 @@ class ActiveConnection extends _$ActiveConnection {
         ),
       );
     }
+  }
+
+  /// Verifies the live connection on app resume and silently reconnects if the
+  /// socket was killed while backgrounded. No-op when nothing is connected.
+  Future<void> pingOrReconnect() async {
+    final current = state;
+    if (current is! ConnectionConnected) {
+      return;
+    }
+    try {
+      await current.adapter.ping();
+      return; // Still alive.
+    } on Object {
+      // Socket is probably dead; fall through to a reconnect.
+    }
+
+    state = ConnectionReconnecting(current.connectionId);
+    try {
+      final adapter = await _open(current.connectionId);
+      await _disconnectAdapter();
+      _adapter = adapter;
+      state = ConnectionConnected(current.connectionId, adapter);
+    } on AppException catch (error) {
+      state = ConnectionFailed(current.connectionId, error);
+    } catch (error, stackTrace) {
+      state = ConnectionFailed(
+        current.connectionId,
+        UnknownDatabaseException(
+          'Could not reconnect.',
+          cause: error,
+          stackTrace: stackTrace,
+        ),
+      );
+    }
+  }
+
+  /// Loads metadata + password and opens a live adapter. Throws on failure.
+  Future<DatabaseAdapter> _open(String connectionId) async {
+    final saved = await ref
+        .read(connectionsRepositoryProvider)
+        .getById(connectionId);
+    if (saved == null) {
+      throw StateError('Connection "$connectionId" no longer exists.');
+    }
+    final password =
+        await ref
+            .read(secureCredentialsRepositoryProvider)
+            .readPassword(connectionId) ??
+        '';
+    final adapter = AdapterRegistry.create(saved.kind);
+    await adapter.connect(saved.toConnectionConfig(password: password));
+    return adapter;
   }
 
   /// Closes the active connection and returns to idle.

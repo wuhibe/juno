@@ -24,15 +24,49 @@ class WorkspaceShellScreen extends ConsumerWidget {
     final colors = Theme.of(context).juno;
     final status = ref.watch(activeConnectionProvider);
 
-    // If the connection isn't live (e.g. after disconnect or a deep link),
-    // send the user back to the list.
-    if (status is! ConnectionConnected) {
+    // An explicit disconnect (or a deep link with no live connection) sends the
+    // user back to the list.
+    if (status is ConnectionIdle) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (context.mounted) {
           context.goNamed(AppRoute.connections.name);
         }
       });
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // A transient (re)connect keeps the user in place with a spinner.
+    if (status is ConnectionConnecting || status is ConnectionReconnecting) {
+      return Scaffold(
+        appBar: AppBar(title: Text(_title(ref))),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const CircularProgressIndicator(),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                status is ConnectionReconnecting
+                    ? 'Reconnecting…'
+                    : 'Connecting…',
+                style: TextStyle(color: colors.textMuted),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // The socket died and could not be reopened — offer a retry in place
+    // instead of dropping the user back to the list (plan §8.3).
+    if (status is ConnectionFailed) {
+      return _ConnectionLost(
+        title: _title(ref),
+        message: status.error.message,
+        onRetry: () =>
+            ref.read(activeConnectionProvider.notifier).connect(connectionId),
+        onLeave: () => context.goNamed(AppRoute.connections.name),
+      );
     }
 
     final showSystem = ref.watch(showSystemSchemasProvider);
@@ -87,5 +121,61 @@ class WorkspaceShellScreen extends ConsumerWidget {
       }
     }
     return 'Workspace';
+  }
+}
+
+/// Shown when the active connection was lost and the auto-reconnect failed.
+class _ConnectionLost extends StatelessWidget {
+  const _ConnectionLost({
+    required this.title,
+    required this.message,
+    required this.onRetry,
+    required this.onLeave,
+  });
+
+  final String title;
+  final String message;
+  final VoidCallback onRetry;
+  final VoidCallback onLeave;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.juno;
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(Icons.cloud_off_rounded, size: 48, color: colors.danger),
+              const SizedBox(height: AppSpacing.lg),
+              Text('Connection lost', style: theme.textTheme.titleMedium),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colors.textMuted,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Reconnect'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextButton(
+                onPressed: onLeave,
+                child: const Text('Back to connections'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

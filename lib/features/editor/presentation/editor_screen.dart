@@ -1,11 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:juno/core/errors/app_exception.dart';
+import 'package:juno/core/router/app_router.dart';
 import 'package:juno/core/theme/app_radii.dart';
 import 'package:juno/core/theme/app_spacing.dart';
 import 'package:juno/core/theme/app_typography.dart';
 import 'package:juno/core/theme/juno_colors.dart';
 import 'package:juno/data/data_providers.dart';
+import 'package:juno/features/connections/application/active_connection_provider.dart';
+import 'package:juno/features/editor/application/editor_draft_provider.dart';
 import 'package:juno/features/editor/application/query_runner_provider.dart';
 import 'package:juno/features/editor/domain/sql_statement.dart';
 import 'package:juno/features/editor/presentation/widgets/snippet_toolbar.dart';
@@ -40,6 +46,15 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   Future<void> _run() async {
     final sql = _controller.text;
+    // Don't run against a dead connection — the adapter would be unavailable.
+    if (ref.read(activeConnectionProvider) is! ConnectionConnected) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Not connected. Reconnect to run.')),
+        );
+      return;
+    }
     // Layer 2 (UX): warn before letting the server reject a write on a
     // read-only connection (plan §4). The server is still the guarantee.
     if (_readOnly(listen: false)) {
@@ -62,6 +77,22 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   }
 
   void _cancel() => ref.read(queryRunnerProvider.notifier).cancel();
+
+  /// Loads SQL handed over from another screen (history re-run / insert).
+  void _consumeDraft(EditorDraft draft) {
+    ref.read(editorDraftRequestProvider.notifier).clear();
+    _controller.text = draft.sql;
+    if (draft.run) {
+      // Defer until the history route has popped and this is the live screen.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          unawaited(_run());
+        }
+      });
+    } else {
+      _editorFocus.requestFocus();
+    }
+  }
 
   /// Whether the active connection is read-only. Pass [listen] `true` from
   /// `build` (to rebuild the badge) and `false` from callbacks.
@@ -86,10 +117,25 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     final state = ref.watch(queryRunnerProvider);
     final running = state is QueryRunning;
 
+    // Consume SQL handed over from the history screen.
+    ref.listen<EditorDraft?>(editorDraftRequestProvider, (previous, next) {
+      if (next != null) {
+        _consumeDraft(next);
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('SQL editor'),
         actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.history_rounded),
+            tooltip: 'Query history',
+            onPressed: () => context.pushNamed(
+              AppRoute.history.name,
+              pathParameters: <String, String>{'id': widget.connectionId},
+            ),
+          ),
           if (_readOnly(listen: true))
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.md),
@@ -112,6 +158,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       ),
       body: Column(
         children: <Widget>[
+          _ConnectionBanner(connectionId: widget.connectionId),
           Expanded(
             flex: 2,
             child: Container(
@@ -134,6 +181,67 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
             focusNode: _editorFocus,
             isReadOnly: _readOnly(listen: true),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A slim status strip shown when the active connection is reconnecting or
+/// lost, so the editor reflects lifecycle changes without leaving the screen.
+class _ConnectionBanner extends ConsumerWidget {
+  const _ConnectionBanner({required this.connectionId});
+
+  final String connectionId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = Theme.of(context).juno;
+    final status = ref.watch(activeConnectionProvider);
+
+    if (status is ConnectionReconnecting) {
+      return _strip(
+        color: colors.operator,
+        icon: Icons.sync_rounded,
+        label: 'Reconnecting…',
+      );
+    }
+    if (status is ConnectionFailed) {
+      return _strip(
+        color: colors.danger,
+        icon: Icons.cloud_off_rounded,
+        label: 'Connection lost',
+        action: TextButton(
+          onPressed: () =>
+              ref.read(activeConnectionProvider.notifier).connect(connectionId),
+          child: const Text('Reconnect'),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _strip({
+    required Color color,
+    required IconData icon,
+    required String label,
+    Widget? action,
+  }) {
+    return Container(
+      width: double.infinity,
+      color: color.withValues(alpha: 0.15),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(label, style: AppTypography.mono(12, color: color)),
+          ),
+          ?action,
         ],
       ),
     );
