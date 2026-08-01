@@ -73,7 +73,7 @@ final class TableBrowseProvider
   }
 }
 
-String _$tableBrowseHash() => r'8a83a1bd86b30ac151523ad56b0a6b9146162ce9';
+String _$tableBrowseHash() => r'39cd8ac91a790facfdc68032a305b0170b489fe6';
 
 /// Browses `schema.table` with server-side filtering, sorting, and paging.
 ///

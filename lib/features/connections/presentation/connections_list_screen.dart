@@ -7,6 +7,7 @@ import 'package:juno/core/router/app_router.dart';
 import 'package:juno/core/theme/app_radii.dart';
 import 'package:juno/core/theme/app_spacing.dart';
 import 'package:juno/core/theme/juno_colors.dart';
+import 'package:juno/core/update/update_banner.dart';
 import 'package:juno/data/data_providers.dart';
 import 'package:juno/data/models/saved_connection.dart';
 import 'package:juno/features/connections/application/active_connection_provider.dart';
@@ -62,33 +63,47 @@ class ConnectionsListScreen extends ConsumerWidget {
               ),
         orElse: () => null,
       ),
-      body: connectionsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _ErrorState(message: '$error'),
-        data: (connections) {
-          if (connections.isEmpty) {
-            return const _EmptyState();
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            itemCount: connections.length,
-            separatorBuilder: (context, index) =>
-                const SizedBox(height: AppSpacing.md),
-            itemBuilder: (context, index) {
-              final connection = connections[index];
-              return ConnectionCard(
-                connection: connection,
-                isConnecting: connection.id == connectingId,
-                onTap: () => ref
-                    .read(activeConnectionProvider.notifier)
-                    .connect(connection.id),
-                onAction: (action) =>
-                    _handleAction(context, ref, connection, action),
-              );
-            },
-          );
-        },
+      body: Column(
+        children: <Widget>[
+          const UpdateBanner(),
+          Expanded(child: _list(context, ref, connectionsAsync, connectingId)),
+        ],
       ),
+    );
+  }
+
+  Widget _list(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<SavedConnection>> connectionsAsync,
+    String? connectingId,
+  ) {
+    return connectionsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => _ErrorState(message: '$error'),
+      data: (connections) {
+        if (connections.isEmpty) {
+          return const _EmptyState();
+        }
+        return ListView.separated(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          itemCount: connections.length,
+          separatorBuilder: (context, index) =>
+              const SizedBox(height: AppSpacing.md),
+          itemBuilder: (context, index) {
+            final connection = connections[index];
+            return ConnectionCard(
+              connection: connection,
+              isConnecting: connection.id == connectingId,
+              onTap: () => ref
+                  .read(activeConnectionProvider.notifier)
+                  .connect(connection.id),
+              onAction: (action) =>
+                  _handleAction(context, ref, connection, action),
+            );
+          },
+        );
+      },
     );
   }
 

@@ -35,7 +35,8 @@
           "deps",
           "ci",
           "tooling",
-          "release"
+          "release",
+          "update"
         ]
       ],
       "scope-empty": [
