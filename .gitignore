@@ -58,3 +58,7 @@ Juno Design System.html
 # Skills
 .agents
 skills-lock.json
+# Android release signing (written by CI from secrets; never commit)
+/android/key.properties
+*.jks
+*.keystore
