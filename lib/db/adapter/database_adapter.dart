@@ -9,7 +9,7 @@ import 'package:juno/db/adapter/models/table_query.dart';
 /// repository layers depend only on this interface and the driver-agnostic
 /// models — never on `package:postgres` or any other driver. All SQL the app
 /// itself generates (previews, pagination, introspection) lives inside the
-/// concrete adapter (see plan §3).
+/// concrete adapter.
 abstract interface class DatabaseAdapter {
   /// The engine this adapter speaks to.
   DatabaseKind get kind;
@@ -20,7 +20,7 @@ abstract interface class DatabaseAdapter {
   /// Opens the connection described by [config].
   ///
   /// MUST honor [ConnectionConfig.readOnly] by enforcing it server-side where
-  /// the engine supports it (Postgres: `default_transaction_read_only`; plan §4).
+  /// the engine supports it (Postgres: `default_transaction_read_only`).
   /// Throws an `AppException` subtype on failure.
   Future<void> connect(ConnectionConfig config);
 

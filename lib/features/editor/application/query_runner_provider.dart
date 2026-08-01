@@ -193,7 +193,7 @@ class QueryRunner extends _$QueryRunner {
     }
   }
 
-  /// Best-effort cancellation of the running statement (plan §5.4).
+  /// Best-effort cancellation of the running statement.
   Future<void> cancel() async {
     if (state is! QueryRunning) {
       return;

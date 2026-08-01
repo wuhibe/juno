@@ -2,7 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:juno/data/app_database.dart';
 
 /// Stores the snippet chips the user has pinned to the editor toolbar's
-/// favorites group (plan §8). Labels only — no schema or secret data.
+/// favorites group. Labels only — no schema or secret data.
 class SnippetFavoritesRepository {
   /// Creates the repository over [_db].
   SnippetFavoritesRepository(this._db);

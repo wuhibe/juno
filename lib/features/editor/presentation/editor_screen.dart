@@ -56,7 +56,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       return;
     }
     // Layer 2 (UX): warn before letting the server reject a write on a
-    // read-only connection (plan §4). The server is still the guarantee.
+    // read-only connection. The server is still the guarantee.
     if (_readOnly(listen: false)) {
       final statement = SqlStatement.classify(sql);
       if (statement.kind == StatementKind.write ||

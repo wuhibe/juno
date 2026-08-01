@@ -4,7 +4,7 @@ import 'package:juno/core/theme/app_spacing.dart';
 import 'package:juno/core/theme/juno_colors.dart';
 
 /// A pre-flight warning shown when a write/DDL statement is about to run on a
-/// read-only connection (plan §4, Layer 2 — UX only).
+/// read-only connection (Layer 2 — UX only).
 ///
 /// The server-side guarantee still rejects the write; this just gives friendly,
 /// immediate feedback instead of letting a raw Postgres error be the first

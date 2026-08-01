@@ -3,7 +3,7 @@ import 'package:juno/features/editor/domain/sql_schema_snapshot.dart';
 import 'package:juno/features/editor/domain/sql_suggestion.dart';
 import 'package:juno/features/editor/domain/sql_tokenizer.dart';
 
-/// Context-aware SQL autocomplete (plan §6.3).
+/// Context-aware SQL autocomplete.
 ///
 /// A pure function of the current line, the cursor offset, and a
 /// [SqlSchemaSnapshot]: it decides which clause the cursor sits in, which
@@ -12,7 +12,7 @@ import 'package:juno/features/editor/domain/sql_tokenizer.dart';
 ///
 /// Limitation: re_editor hands the prompts builder only the *current line*, so
 /// table/alias references on other lines of a multi-line statement are not
-/// visible. Good enough for v1; the snippet toolbar (Phase 7) covers the rest.
+/// visible. Good enough for v1; the snippet toolbar covers the rest.
 class SqlAutocompleteEngine {
   /// Creates an engine over [snapshot].
   const SqlAutocompleteEngine(this.snapshot);

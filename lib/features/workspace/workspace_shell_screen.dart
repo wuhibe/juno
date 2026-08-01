@@ -10,8 +10,8 @@ import 'package:juno/features/browser/application/schema_cache_provider.dart';
 import 'package:juno/features/browser/presentation/schema_browser.dart';
 import 'package:juno/features/connections/application/active_connection_provider.dart';
 
-/// The connected workspace: hosts the schema browser (Phase 4). The SQL editor
-/// and results grid are layered in next (Phase 5).
+/// The connected workspace: hosts the schema browser. The SQL editor and
+/// results grid live one route deeper.
 class WorkspaceShellScreen extends ConsumerWidget {
   /// Creates the workspace shell for [connectionId].
   const WorkspaceShellScreen({required this.connectionId, super.key});
@@ -58,7 +58,7 @@ class WorkspaceShellScreen extends ConsumerWidget {
     }
 
     // The socket died and could not be reopened — offer a retry in place
-    // instead of dropping the user back to the list (plan §8.3).
+    // instead of dropping the user back to the list.
     if (status is ConnectionFailed) {
       return _ConnectionLost(
         title: _title(ref),

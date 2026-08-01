@@ -15,7 +15,7 @@ class SnippetInsertion {
 
 /// Plans how to splice a snippet into the editor with smart spacing — auto-space
 /// before/after keywords, hug punctuation, and drop the cursor inside trailing
-/// pairs like `()` and `''` (plan §8).
+/// pairs like `()` and `''`.
 abstract final class SnippetInserter {
   /// Plans inserting [chip] between [before] (text left of the cursor on the
   /// line) and [after] (text right of it).

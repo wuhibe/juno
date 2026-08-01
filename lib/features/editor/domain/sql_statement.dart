@@ -20,9 +20,9 @@ enum StatementKind {
 ///
 /// It strips comments and literals, then inspects the first significant keyword.
 /// Two consumers rely on it:
-///  - **Pagination** (Phase 5): only a bare `SELECT` without its own `LIMIT` may
+///  - **Pagination**: only a bare `SELECT` without its own `LIMIT` may
 ///    have `LIMIT/OFFSET` appended ([isPaginable]).
-///  - **Read-only Layer 2 UX** (Phase 6): the [kind] drives the write warning.
+///  - **Read-only Layer 2 UX**: the [kind] drives the write warning.
 class SqlStatement {
   const SqlStatement({
     required this.kind,

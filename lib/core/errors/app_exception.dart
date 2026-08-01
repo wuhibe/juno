@@ -1,8 +1,8 @@
 /// Base of Juno's driver-agnostic exception hierarchy.
 ///
 /// Database adapters must translate raw driver errors into one of these typed
-/// exceptions (see plan §3 / §1 Phase 1) so the UI can render a clean,
-/// human-readable [message] and branch on the type — never on a driver string.
+/// exceptions so the UI can render a clean, human-readable [message] and branch
+/// on the type — never on a driver string.
 ///
 /// The original error is kept in [cause] for logging, but must never be shown
 /// raw to the user, and must never contain credentials.

@@ -13,7 +13,7 @@ void main() {
 ///
 /// Owns the app-lifecycle listener: mobile OSes kill idle TCP sockets while
 /// backgrounded, so every resume triggers a liveness check + silent reconnect
-/// on the active connection (plan §8.2, §9.1).
+/// on the active connection.
 class JunoApp extends ConsumerStatefulWidget {
   /// Creates the app.
   const JunoApp({super.key});

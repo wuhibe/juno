@@ -8,12 +8,12 @@ part of 'query_history_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Live query history for [connectionId], newest first (plan §8.1).
+/// Live query history for [connectionId], newest first.
 
 @ProviderFor(queryHistory)
 final queryHistoryProvider = QueryHistoryFamily._();
 
-/// Live query history for [connectionId], newest first (plan §8.1).
+/// Live query history for [connectionId], newest first.
 
 final class QueryHistoryProvider
     extends
@@ -25,7 +25,7 @@ final class QueryHistoryProvider
     with
         $FutureModifier<List<QueryHistoryEntry>>,
         $StreamProvider<List<QueryHistoryEntry>> {
-  /// Live query history for [connectionId], newest first (plan §8.1).
+  /// Live query history for [connectionId], newest first.
   QueryHistoryProvider._({
     required QueryHistoryFamily super.from,
     required String super.argument,
@@ -72,7 +72,7 @@ final class QueryHistoryProvider
 
 String _$queryHistoryHash() => r'39c794ad46793183a4199fb82e545ec9f60e7d4e';
 
-/// Live query history for [connectionId], newest first (plan §8.1).
+/// Live query history for [connectionId], newest first.
 
 final class QueryHistoryFamily extends $Family
     with $FunctionalFamilyOverride<Stream<List<QueryHistoryEntry>>, String> {
@@ -85,7 +85,7 @@ final class QueryHistoryFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Live query history for [connectionId], newest first (plan §8.1).
+  /// Live query history for [connectionId], newest first.
 
   QueryHistoryProvider call(String connectionId) =>
       QueryHistoryProvider._(argument: connectionId, from: this);

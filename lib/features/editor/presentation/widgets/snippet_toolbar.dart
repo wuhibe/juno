@@ -16,7 +16,7 @@ import 'package:juno/features/editor/presentation/widgets/snippet_chip_view.dart
 import 'package:juno/features/editor/presentation/widgets/snippet_pick_sheet.dart';
 import 'package:re_editor/re_editor.dart';
 
-/// The composable snippet toolbar (plan §8): a horizontally scrollable row of
+/// The composable snippet toolbar: a horizontally scrollable row of
 /// colour-coded chips pinned above the keyboard. Chips insert SQL at the cursor
 /// with smart spacing; the chip groups reorder by the cursor's context; smart
 /// chips pull tables/columns from the schema cache.
@@ -129,7 +129,7 @@ class _SnippetToolbarState extends ConsumerState<SnippetToolbar> {
     widget.focusNode.requestFocus();
   }
 
-  /// Long-press menu: pin/unpin the chip (plan §8 favorites) plus any insert
+  /// Long-press menu: pin/unpin the chip (favorites) plus any insert
   /// variants (`JOIN` → LEFT/RIGHT/…, `LIMIT` → 10/100/1000).
   Future<void> _showChipMenu(
     SnippetChip chip,

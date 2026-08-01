@@ -1,6 +1,6 @@
 import 'package:juno/features/editor/domain/snippet_chip.dart';
 
-/// The static snippet catalog (plan §8) — the colour-coded chips, grouped by
+/// The static snippet catalog — the colour-coded chips, grouped by
 /// category, with their long-press variants. Smart (schema) chips are generated
 /// at runtime from the schema cache and are not listed here.
 abstract final class SnippetCatalog {

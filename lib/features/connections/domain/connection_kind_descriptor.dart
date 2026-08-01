@@ -6,7 +6,7 @@ import 'package:juno/db/adapter/models/connection_config.dart';
 ///
 /// Keeping field defaults and capabilities behind a descriptor is what lets a
 /// future MySQL/SQLite adapter slot in with a new descriptor and zero changes
-/// to the editor form (plan §3).
+/// to the editor form.
 class ConnectionKindDescriptor {
   /// Creates a descriptor for [kind].
   const ConnectionKindDescriptor({

@@ -24,7 +24,7 @@ class SnippetPickItem<T> {
 }
 
 /// A searchable bottom-sheet quick-pick used by the snippet toolbar's smart
-/// chips — tap `FROM` to pick a table, or pick a column (plan §8 "smart chips").
+/// chips — tap `FROM` to pick a table, or pick a column ("smart chips").
 class SnippetPickSheet<T> extends StatefulWidget {
   /// Creates the sheet titled [title] over [items].
   const SnippetPickSheet({required this.title, required this.items, super.key});

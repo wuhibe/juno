@@ -4,7 +4,7 @@ import 'package:drift_flutter/drift_flutter.dart';
 part 'app_database.g.dart';
 
 /// Saved connection metadata. **Never** stores secrets — passwords live only in
-/// secure storage (see `SecureCredentialsRepository`, plan §5).
+/// secure storage (see `SecureCredentialsRepository`).
 @DataClassName('ConnectionRow')
 class Connections extends Table {
   /// UUID primary key.
@@ -83,8 +83,8 @@ class QueryHistoryEntries extends Table {
   TextColumn get errorSummary => text().nullable()();
 }
 
-/// Snippet chips the user has pinned to the front of the editor toolbar
-/// (plan §8 "favorites group"). Identified by the chip's label.
+/// Snippet chips the user has pinned to the editor toolbar's favorites group.
+/// Identified by the chip's label.
 @DataClassName('SnippetFavoriteRow')
 class SnippetFavorites extends Table {
   /// The pinned chip's label (e.g. `SELECT`, `WHERE`).

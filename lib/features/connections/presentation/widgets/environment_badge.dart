@@ -7,7 +7,7 @@ import 'package:juno/core/theme/juno_colors.dart';
 import 'package:juno/data/models/saved_connection.dart';
 
 /// A small pill showing a connection's environment. Production is rendered in
-/// the danger color as a deliberate caution signal (plan §3).
+/// the danger color as a deliberate caution signal.
 class EnvironmentBadge extends StatelessWidget {
   /// Creates a badge for [environment].
   const EnvironmentBadge({required this.environment, super.key});

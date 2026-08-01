@@ -3,7 +3,7 @@ import 'package:juno/core/theme/app_radii.dart';
 import 'package:juno/core/theme/app_spacing.dart';
 import 'package:juno/core/theme/app_typography.dart';
 
-/// A single snippet chip rendered per the plan §8 anatomy: 32px tall, 16px
+/// A single snippet chip rendered per the chip anatomy: 32px tall, 16px
 /// radius, category-colour background at ~18% opacity with a 1px category-colour
 /// border and a monospace label in the full category colour. Pressed state
 /// inverts to a full-opacity background with dark text.

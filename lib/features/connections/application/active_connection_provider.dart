@@ -52,8 +52,8 @@ class ConnectionFailed extends ConnectionStatus {
   final AppException error;
 }
 
-/// The socket died while backgrounded and a silent reconnect is in flight
-/// (plan §8.2). Distinct from [ConnectionConnecting] so the workspace can keep
+/// The socket died while backgrounded and a silent reconnect is in flight.
+/// Distinct from [ConnectionConnecting] so the workspace can keep
 /// the user in place instead of bouncing them to the connection list.
 class ConnectionReconnecting extends ConnectionStatus {
   /// Creates the reconnecting state.

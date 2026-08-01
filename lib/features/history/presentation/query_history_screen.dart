@@ -12,7 +12,7 @@ import 'package:juno/data/models/query_history_entry.dart';
 import 'package:juno/features/editor/application/editor_draft_provider.dart';
 import 'package:juno/features/history/application/query_history_provider.dart';
 
-/// The per-connection query history (plan §8.1): re-run, copy, or insert any
+/// The per-connection query history: re-run, copy, or insert any
 /// past statement back into the editor.
 class QueryHistoryScreen extends ConsumerWidget {
   /// Creates the history screen for [connectionId].

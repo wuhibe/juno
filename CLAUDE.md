@@ -1,10 +1,12 @@
 # Juno — Mobile Database Client
 
 A mobile-first (iOS + Android) database client built with Flutter. V1 targets **PostgreSQL**:
-browse schemas/tables, run queries with highlighting + autocomplete, manage saved connections,
-with an enforced per-connection **read-only mode**. See [`mobile-db-client-plan.md`](mobile-db-client-plan.md)
-for the full product spec and phased roadmap — that document is the source of truth for *what* to build;
-this file is the source of truth for *how* the code is organized and the conventions we hold to.
+browse schemas/tables, filter and page through data, run queries with highlighting + autocomplete,
+manage saved connections, with an enforced per-connection **read-only mode**.
+
+[`README.md`](README.md) describes what Juno does today and [`ROADMAP.md`](ROADMAP.md) what it does
+not do yet. **This file is the source of truth for how the code is organized and the conventions we
+hold to** — read it before changing anything.
 
 ---
 
@@ -31,11 +33,19 @@ this file is the source of truth for *how* the code is organized and the convent
 
 All database access goes through an **abstract adapter interface**. The app never imports
 `package:postgres` (or any other driver) outside its adapter. This is what keeps the door open for
-MySQL/SQLite later (plan §3).
+MySQL/SQLite later.
 
 - UI, state, and repositories consume **only driver-agnostic models** (`lib/db/adapter/models/`).
-- All SQL the *app itself* generates (previews, pagination, introspection) lives **inside the adapter**.
+- All SQL the *app itself* generates (previews, pagination, filters, introspection) lives **inside
+  the adapter**. The UI describes intent — `ColumnFilter`/`ColumnSort` in
+  `db/adapter/models/table_query.dart` go to `buildTableQuery`, which returns SQL **plus bound
+  parameters**. Never interpolate a user value into a statement.
+- A driver type must never escape the adapter. `package:postgres` hands back `UndecodedBytes` for
+  any OID it has no codec for (enums, domains, composites); `PostgresAdapter` decodes those before
+  building a `QueryResult`, or the UI renders `Instance of 'UndecodedBytes'`.
 - `ConnectionConfig.kind` is persisted from day one even though only `postgres` exists.
+- The connection editor reads its field list from a per-kind descriptor (port default, SSL options),
+  so adding an engine is a new adapter + descriptor, not a UI rewrite.
 
 ### Layering (dependencies point downward only)
 
@@ -57,13 +67,14 @@ core/
   theme/      design tokens (AppColors, AppTypography, AppRadii, AppSpacing) + ThemeData
   router/     go_router config
   errors/     AppException hierarchy + driver→app error mapping
+  update/     GitHub-release update check + banner
 db/
   adapter/    database_adapter.dart (contract), adapter_registry.dart, models/
   postgres/   postgres_adapter.dart, postgres_introspection.dart
 data/         secure_credentials_repository, connections_repository, query_history_repository
 features/
   connections/  list, editor form, test-connection
-  browser/      schema tree, table preview
+  browser/      schema tree, table browser (filters, sort, paging)
   editor/       SQL editor, autocomplete, snippet toolbar
   results/      grid, pagination, cell viewer
 main.dart
@@ -104,7 +115,43 @@ mirrored from the Figma/Claude design export (`Juno Design System.html`).
   Never store a password in drift, logs, error reports, analytics, or any persisted state object.
 - **Never log SQL with inlined credentials or full result data.** Query history stores SQL text only.
 - Read-only mode is enforced **server-side** in the adapter's `connect()` (Postgres
-  `default_transaction_read_only = on`); the client-side classifier is UX only, not the guarantee (plan §4).
+  `default_transaction_read_only = on` + `SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY`).
+  The engine then rejects writes hidden inside CTEs, function calls, and `COPY`. The client-side
+  statement classifier is **UX only** — a friendly pre-flight warning, never the guarantee.
+  Caveat to keep documented in the explainer sheet: `SET` itself stays allowed, so read-only
+  protects the user from themselves, not from a hostile user. The real vault is a DB role with only
+  SELECT grants, and the app recommends it.
+
+---
+
+---
+
+## Gotchas worth not rediscovering
+
+1. **Mobile networks kill idle TCP.** Ping on resume and auto-reconnect; never assume a connection
+   survived backgrounding.
+2. **Don't paginate blindly.** `LIMIT/OFFSET` may only be appended to a bare `SELECT` without its
+   own `LIMIT` — gate on `SqlStatement.classify`. Appending to anything else corrupts it.
+   And a paged result must not be sorted client-side: ordering one page misrepresents the table.
+3. **Huge cells, not just huge row counts.** A 2 MB `jsonb` value janks the grid — truncate inline
+   and offer the full value in the cell viewer sheet.
+4. **Type rendering** goes through a per-OID formatter, never `toString()`: bytea as truncated
+   `\x…`, timestamps with tz, numeric precision, arrays.
+5. **iOS local network permission**: without `NSLocalNetworkUsageDescription`, LAN connections fail
+   silently on iOS 14+.
+6. **Don't use `pluto_grid`/`pluto_grid_plus`** — unmaintained. `trina_grid` is the successor.
+
+---
+
+## Releases
+
+Tag-driven: pushing `v1.2.3` builds a signed APK (tag → build name, CI run number → build number)
+and publishes `Juno-v1.2.3.apk`. Signing keys come from repository secrets; `android/key.properties`
+is gitignored and local release builds fall back to the debug key. **Every published APK must carry
+the same signature** or Android refuses the upgrade.
+
+The app checks GitHub Releases on launch and offers newer builds (`core/update/`). The check must
+never throw or block — a failed lookup silently shows no banner.
 
 ---
 
@@ -125,7 +172,7 @@ Conventional Commits, enforced by commitlint via the husky `commit-msg` hook.
 ```
 
 - **types:** `feat fix refactor perf docs test build ci chore revert style`
-- **scopes:** `core theme router db adapter postgres data connections browser editor results history deps ci tooling release`
+- **scopes:** `core theme router db adapter postgres data connections browser editor results history update deps ci tooling release`
 - Subject in imperative mood, lower-case, no trailing period. Example:
   `feat(connections): add test-connection ping with latency`
 

@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// Stores and retrieves connection passwords.
 ///
 /// This is the **only** place a password is read or written. Passwords never
-/// touch drift, logs, analytics, or any persisted state object (plan §5). Kept
+/// touch drift, logs, analytics, or any persisted state object. Kept
 /// as an interface so it can be faked in tests without platform channels.
 abstract interface class SecureCredentialsRepository {
   /// Stores (or replaces) the password for [connectionId].

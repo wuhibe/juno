@@ -18,7 +18,7 @@ class ColumnMeta {
   /// Readable Postgres type name, e.g. `text`, `int4`, `timestamptz`.
   final String dbType;
 
-  /// The Postgres type OID — used to pick a per-type value formatter (plan §9).
+  /// The Postgres type OID — used to pick a per-type value formatter.
   final int typeOid;
 
   @override

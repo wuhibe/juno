@@ -2,7 +2,7 @@
 ///
 /// Only [postgres] exists in v1, but the value is modeled — and persisted —
 /// from day one so MySQL/SQLite adapters can be added later without a storage
-/// or UI migration (see plan §3).
+/// or UI migration.
 enum DatabaseKind {
   /// PostgreSQL.
   postgres,
@@ -28,7 +28,7 @@ enum DbSslMode {
 /// This is a **transient** object assembled at connect time — the [password] is
 /// fetched from secure storage and lives here only in memory. It is never
 /// persisted to drift, logs, analytics, or error reports; [toString] redacts it.
-/// Non-secret connection metadata is stored separately (see plan §5).
+/// Non-secret connection metadata is stored separately.
 class ConnectionConfig {
   /// Creates a connection configuration.
   const ConnectionConfig({
@@ -65,7 +65,7 @@ class ConnectionConfig {
   /// How TLS is negotiated.
   final DbSslMode sslMode;
 
-  /// When true, the adapter enforces read-only mode server-side (plan §4).
+  /// When true, the adapter enforces read-only mode server-side.
   final bool readOnly;
 
   /// Maximum time to wait for the initial connection.

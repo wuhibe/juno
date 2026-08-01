@@ -5,7 +5,7 @@ import 'package:juno/core/theme/app_spacing.dart';
 import 'package:juno/core/theme/juno_colors.dart';
 
 /// A bottom sheet explaining what read-only mode does — and, honestly, what it
-/// does not (plan §4): it is a seatbelt against accidental writes, not a vault.
+/// does not: it is a seatbelt against accidental writes, not a vault.
 class ReadOnlyExplainerSheet extends StatelessWidget {
   /// Creates the explainer sheet.
   const ReadOnlyExplainerSheet({super.key});

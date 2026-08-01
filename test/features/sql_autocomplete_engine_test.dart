@@ -35,7 +35,7 @@ List<String> _labels(String line) =>
     _suggest(line).map((s) => s.label).toList();
 
 void main() {
-  group('SqlAutocompleteEngine — acceptance (plan §6.4)', () {
+  group('SqlAutocompleteEngine — acceptance', () {
     test('after FROM, a table prefix offers matching tables', () {
       final labels = _labels('SELECT * FROM us');
       expect(labels, contains('users'));

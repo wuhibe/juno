@@ -1,7 +1,7 @@
 import 'package:juno/features/editor/domain/sql_tokenizer.dart';
 
 /// What the cursor most recently followed — drives how the snippet toolbar
-/// reorders its chip groups (plan §8 "context awareness").
+/// reorders its chip groups ("context awareness").
 enum EditorContext {
   /// Empty buffer or just after `;`.
   statementStart,

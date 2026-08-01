@@ -51,8 +51,7 @@ app.*.map.json
 /node_modules/
 devtools_options.yaml
 
-# Project documentation/design (local references only)
-mobile-db-client-plan.md
+# Design export (local reference only)
 Juno Design System.html
 
 # Skills

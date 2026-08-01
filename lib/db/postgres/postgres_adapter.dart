@@ -14,7 +14,7 @@ import 'package:postgres/postgres.dart' as pg;
 ///
 /// This is the **only** place `package:postgres` is imported. It owns the
 /// connection lifecycle, maps driver results/errors onto driver-agnostic models
-/// and typed [AppException]s, and enforces read-only mode server-side (plan §4).
+/// and typed [AppException]s, and enforces read-only mode server-side.
 class PostgresAdapter implements DatabaseAdapter {
   /// Creates an unconnected adapter.
   PostgresAdapter();
@@ -64,7 +64,7 @@ class PostgresAdapter implements DatabaseAdapter {
 
       if (config.readOnly) {
         // Layer 1 — the actual guarantee. Postgres rejects every write
-        // (including ones hidden in CTEs) at the engine level (plan §4).
+        // (including ones hidden in CTEs) at the engine level.
         await connection.execute('SET default_transaction_read_only = on');
         await connection.execute(
           'SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY',
@@ -152,7 +152,7 @@ class PostgresAdapter implements DatabaseAdapter {
         await canceller.close();
       }
     } catch (_) {
-      // Best-effort only (plan §3): a failed cancel must not surface an error.
+      // Best-effort only: a failed cancel must not surface an error.
     }
   }
 

@@ -1,6 +1,6 @@
 /// A single local query-history record (domain model).
 ///
-/// Stores SQL text only — never result data, and never credentials (plan §5).
+/// Stores SQL text only — never result data, and never credentials.
 class QueryHistoryEntry {
   /// Creates a history entry. [id] is null until persisted.
   const QueryHistoryEntry({

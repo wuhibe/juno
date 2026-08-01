@@ -1,7 +1,7 @@
 import 'package:juno/db/adapter/models/connection_config.dart';
 
 /// The deployment environment a connection points at. Drives the color/badge
-/// treatment in the UI (prod gets a red accent, plan §3).
+/// treatment in the UI (prod gets a red accent).
 enum DbEnvironment {
   /// Development.
   dev,

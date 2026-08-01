@@ -1,4 +1,4 @@
-/// The colour-coded block category a [SnippetChip] belongs to (plan §8).
+/// The colour-coded block category a [SnippetChip] belongs to.
 enum SnippetCategory {
   /// Statement structure — violet (`SELECT`, `FROM`, `WHERE`, `JOIN`, …).
   structure,
