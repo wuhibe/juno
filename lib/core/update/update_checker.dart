@@ -91,9 +91,10 @@ AppUpdate? parseUpdate(String responseBody, {required String currentVersion}) {
 
 /// Whether [candidate] is a newer release than [current].
 ///
-/// Compares the dotted numeric parts only, so a pre-release suffix
-/// (`1.1.0-beta`) is treated as its base version and never outranks a build
-/// with the same numbers.
+/// Compares the dotted numeric parts first. On a tie, a final release beats a
+/// pre-release of the same numbers (`1.0.3` > `1.0.3-test`), per semver — but
+/// two pre-releases of the same version are treated as equal rather than
+/// ordered by their tails.
 bool isNewerVersion(String candidate, String current) {
   final a = _versionParts(candidate);
   final b = _versionParts(current);
@@ -104,8 +105,12 @@ bool isNewerVersion(String candidate, String current) {
       return left > right;
     }
   }
-  return false;
+  return !_isPreRelease(candidate) && _isPreRelease(current);
 }
+
+/// Whether [version] carries a pre-release tail (`1.0.3-test`), which ranks
+/// below the plain release of the same numbers.
+bool _isPreRelease(String version) => version.split('+').first.contains('-');
 
 List<int> _versionParts(String version) {
   // Drop a build suffix (`1.2.3+45`) and any pre-release tail (`1.2.3-beta`).

@@ -43,6 +43,16 @@ void main() {
       expect(isNewerVersion('1.2.3-beta', '1.2.3'), isFalse);
       expect(isNewerVersion('1.2.4-beta', '1.2.3'), isTrue);
     });
+
+    test('a final release supersedes a pre-release of the same version', () {
+      expect(isNewerVersion('1.0.3', '1.0.3-test'), isTrue);
+      expect(isNewerVersion('1.0.3+7', '1.0.3-test'), isTrue);
+    });
+
+    test('two pre-releases of the same version rank equal', () {
+      expect(isNewerVersion('1.0.3-beta', '1.0.3-alpha'), isFalse);
+      expect(isNewerVersion('1.0.3-alpha', '1.0.3-beta'), isFalse);
+    });
   });
 
   group('parseUpdate', () {
