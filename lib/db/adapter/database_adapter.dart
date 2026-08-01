@@ -1,6 +1,7 @@
 import 'package:juno/db/adapter/models/connection_config.dart';
 import 'package:juno/db/adapter/models/query_result.dart';
 import 'package:juno/db/adapter/models/schema_objects.dart';
+import 'package:juno/db/adapter/models/table_query.dart';
 
 /// The contract every database driver implements.
 ///
@@ -56,4 +57,21 @@ abstract interface class DatabaseAdapter {
 
   /// Builds the engine-specific LIMIT/OFFSET clause for previews and pagination.
   String limitClause(int limit, int offset);
+
+  /// Builds the browse query for one table: `SELECT *` narrowed by [filters],
+  /// ordered by [sort], and paged by [limit]/[offset].
+  ///
+  /// Returns the SQL plus the parameters to bind — filter values are never
+  /// interpolated into the string. This is the seam that keeps the filter UI
+  /// driver-agnostic: it describes conditions, the adapter writes the SQL.
+  ///
+  /// Throws [ArgumentError] if a filter is missing the values its operator needs.
+  ({String sql, Map<String, Object?> params}) buildTableQuery({
+    required String schema,
+    required String table,
+    required int limit,
+    List<ColumnFilter> filters,
+    ColumnSort? sort,
+    int offset,
+  });
 }

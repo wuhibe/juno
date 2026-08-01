@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:juno/db/adapter/database_adapter.dart';
 import 'package:juno/db/adapter/models/column_meta.dart';
 import 'package:juno/db/adapter/models/connection_config.dart';
 import 'package:juno/db/adapter/models/query_result.dart';
 import 'package:juno/db/adapter/models/schema_objects.dart';
+import 'package:juno/db/adapter/models/table_query.dart';
 import 'package:juno/db/postgres/postgres_error_mapper.dart';
 import 'package:juno/db/postgres/postgres_introspection.dart';
 import 'package:postgres/postgres.dart' as pg;
@@ -24,6 +27,11 @@ class PostgresAdapter implements DatabaseAdapter {
   pg.Endpoint? _endpoint;
   pg.ConnectionSettings? _settings;
   int? _backendPid;
+
+  /// OID → name for this database's enum types. The driver has no codec for
+  /// user-defined OIDs, so without this an enum column reports `oid(16xxx)` and
+  /// its values arrive as raw bytes.
+  Map<int, String> _enumTypeNames = const <int, String>{};
 
   @override
   DatabaseKind get kind => DatabaseKind.postgres;
@@ -66,6 +74,8 @@ class PostgresAdapter implements DatabaseAdapter {
       // Remember the backend PID so cancellation can target this session.
       final pidResult = await connection.execute('SELECT pg_backend_pid()');
       _backendPid = pidResult.first.first! as int;
+
+      _enumTypeNames = await _loadEnumTypeNames(connection);
     } catch (error, stackTrace) {
       await _closeQuietly();
       _connection = null;
@@ -80,6 +90,7 @@ class PostgresAdapter implements DatabaseAdapter {
     _endpoint = null;
     _settings = null;
     _backendPid = null;
+    _enumTypeNames = const <int, String>{};
   }
 
   @override
@@ -185,6 +196,98 @@ class PostgresAdapter implements DatabaseAdapter {
   String limitClause(int limit, int offset) =>
       offset > 0 ? 'LIMIT $limit OFFSET $offset' : 'LIMIT $limit';
 
+  @override
+  ({String sql, Map<String, Object?> params}) buildTableQuery({
+    required String schema,
+    required String table,
+    required int limit,
+    List<ColumnFilter> filters = const <ColumnFilter>[],
+    ColumnSort? sort,
+    int offset = 0,
+  }) {
+    final params = <String, Object?>{};
+    final conditions = <String>[];
+
+    for (var i = 0; i < filters.length; i++) {
+      final filter = filters[i];
+      final column = quoteIdentifier(filter.column);
+      if (!filter.isComplete) {
+        throw ArgumentError.value(
+          filter,
+          'filters',
+          'operator ${filter.op.name} needs a value',
+        );
+      }
+
+      switch (filter.op) {
+        case FilterOperator.isNull:
+          conditions.add('$column IS NULL');
+        case FilterOperator.isNotNull:
+          conditions.add('$column IS NOT NULL');
+        case FilterOperator.contains:
+        case FilterOperator.startsWith:
+          // ::text casts so the match also works on enums (which have no LIKE
+          // operator), numerics, and timestamps.
+          final pattern = _likeEscape(filter.values.first);
+          params['f$i'] = filter.op == FilterOperator.contains
+              ? '%$pattern%'
+              : '$pattern%';
+          conditions.add("$column::text ILIKE @f$i ESCAPE '\\'");
+        case FilterOperator.inList:
+          // Expanded rather than `= ANY(@f$i)`: an array parameter goes out
+          // untyped, and the server cannot infer its element type against an
+          // enum column.
+          final alternatives = <String>[];
+          for (var v = 0; v < filter.values.length; v++) {
+            params['f${i}_$v'] = filter.values[v];
+            alternatives.add('$column = @f${i}_$v');
+          }
+          conditions.add('(${alternatives.join(' OR ')})');
+        case FilterOperator.eq:
+        case FilterOperator.notEq:
+        case FilterOperator.gt:
+        case FilterOperator.gte:
+        case FilterOperator.lt:
+        case FilterOperator.lte:
+          params['f$i'] = filter.values.first;
+          conditions.add('$column ${_comparisonOperators[filter.op]} @f$i');
+      }
+    }
+
+    final buffer = StringBuffer(
+      'SELECT * FROM ${quoteIdentifier(schema)}.${quoteIdentifier(table)}',
+    );
+    if (conditions.isNotEmpty) {
+      buffer.write(' WHERE ${conditions.join(' AND ')}');
+    }
+    if (sort != null) {
+      final direction = sort.direction == SortDirection.asc ? 'ASC' : 'DESC';
+      // Ties are ordered by whatever the server returns, so rows with equal
+      // keys can shuffle between pages. Fine for browsing; a unique tiebreaker
+      // would need the table's primary key.
+      buffer.write(' ORDER BY ${quoteIdentifier(sort.column)} $direction');
+    }
+    buffer.write(' ${limitClause(limit, offset)}');
+
+    return (sql: buffer.toString(), params: params);
+  }
+
+  static const Map<FilterOperator, String> _comparisonOperators =
+      <FilterOperator, String>{
+        FilterOperator.eq: '=',
+        FilterOperator.notEq: '<>',
+        FilterOperator.gt: '>',
+        FilterOperator.gte: '>=',
+        FilterOperator.lt: '<',
+        FilterOperator.lte: '<=',
+      };
+
+  /// Escapes the LIKE wildcards so a user's `%` or `_` matches literally.
+  String _likeEscape(String value) => value
+      .replaceAll(r'\', r'\\')
+      .replaceAll('%', r'\%')
+      .replaceAll('_', r'\_');
+
   // --- internals ---
 
   pg.Connection _requireConnection() {
@@ -207,6 +310,21 @@ class PostgresAdapter implements DatabaseAdapter {
     }
   }
 
+  /// Loads the database's enum types. Best-effort: a role without `pg_type`
+  /// visibility still gets a working connection, just `oid(n)` type labels.
+  Future<Map<int, String>> _loadEnumTypeNames(pg.Session session) async {
+    try {
+      final result = await session.execute(
+        "SELECT oid, typname FROM pg_catalog.pg_type WHERE typtype = 'e'",
+      );
+      return <int, String>{
+        for (final row in result) row[0]! as int: row[1]! as String,
+      };
+    } catch (_) {
+      return const <int, String>{};
+    }
+  }
+
   QueryResult _toQueryResult(pg.Result result, Duration elapsed) {
     final columns = <ColumnMeta>[
       for (final column in result.schema.columns)
@@ -217,7 +335,8 @@ class PostgresAdapter implements DatabaseAdapter {
         ),
     ];
     final rows = <List<Object?>>[
-      for (final row in result) List<Object?>.from(row),
+      for (final row in result)
+        <Object?>[for (final cell in row) _decode(cell)],
     ];
     return QueryResult(
       columns: columns,
@@ -233,10 +352,30 @@ class PostgresAdapter implements DatabaseAdapter {
     DbSslMode.verifyFull => pg.SslMode.verifyFull,
   };
 
-  /// Maps common Postgres type OIDs to readable names. Anything not listed
-  /// falls back to `oid(<n>)`; a fuller per-OID value formatter arrives in
-  /// Phase 5 (plan §9.5).
-  String _typeName(int oid) => _pgTypeNames[oid] ?? 'oid($oid)';
+  /// Converts a driver value the registry could not decode into something the
+  /// driver-agnostic layers can render.
+  ///
+  /// The driver has no codec for user-defined OIDs (enums, domains, composites,
+  /// extension types) and hands back [pg.UndecodedBytes]. That type must never
+  /// escape the adapter — the UI would render `Instance of 'UndecodedBytes'`.
+  /// Enums and every other text-shaped type decode as UTF-8; genuinely binary
+  /// payloads fall back to the `\x…` hex form the cell formatter already uses
+  /// for bytea.
+  Object? _decode(Object? value) {
+    if (value is! pg.UndecodedBytes) {
+      return value;
+    }
+    try {
+      return const Utf8Decoder().convert(value.bytes);
+    } on FormatException {
+      return value.bytes;
+    }
+  }
+
+  /// Maps Postgres type OIDs to readable names: the built-in table first, then
+  /// this database's enum types, else `oid(<n>)`.
+  String _typeName(int oid) =>
+      _pgTypeNames[oid] ?? _enumTypeNames[oid] ?? 'oid($oid)';
 
   static const Map<int, String> _pgTypeNames = <int, String>{
     16: 'bool',

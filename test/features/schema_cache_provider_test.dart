@@ -4,6 +4,7 @@ import 'package:juno/db/adapter/database_adapter.dart';
 import 'package:juno/db/adapter/models/connection_config.dart';
 import 'package:juno/db/adapter/models/query_result.dart';
 import 'package:juno/db/adapter/models/schema_objects.dart';
+import 'package:juno/db/adapter/models/table_query.dart';
 import 'package:juno/features/browser/application/schema_cache_provider.dart';
 import 'package:juno/features/connections/application/active_connection_provider.dart';
 
@@ -59,6 +60,15 @@ class _FakeAdapter implements DatabaseAdapter {
   String quoteIdentifier(String raw) => '"$raw"';
   @override
   String limitClause(int limit, int offset) => 'LIMIT $limit';
+  @override
+  ({String sql, Map<String, Object?> params}) buildTableQuery({
+    required String schema,
+    required String table,
+    required int limit,
+    List<ColumnFilter> filters = const <ColumnFilter>[],
+    ColumnSort? sort,
+    int offset = 0,
+  }) => throw UnimplementedError();
 }
 
 ProviderContainer _container() {

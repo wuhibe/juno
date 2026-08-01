@@ -83,6 +83,7 @@ class PostgresIntrospection {
           isNullable: row[3]! as bool,
           isPrimaryKey: row[4]! as bool,
           foreignKey: _foreignKeyFromRow(row),
+          enumValues: (row[9] as List<Object?>?)?.cast<String>(),
         ),
     ];
   }
@@ -112,7 +113,8 @@ class PostgresIntrospection {
   /// (`contype = 'f'`) per column. Column order in the SELECT is depended on by
   /// [listColumns]:
   /// 0 ordinal, 1 name, 2 data_type, 3 is_nullable, 4 is_primary_key,
-  /// 5 fk_name, 6 fk_ref_schema, 7 fk_ref_table, 8 fk_ref_column.
+  /// 5 fk_name, 6 fk_ref_schema, 7 fk_ref_table, 8 fk_ref_column,
+  /// 9 enum_values (null unless the column's type is an enum).
   static const String _columnsSql = '''
 WITH rel AS (
   SELECT c.oid
@@ -124,7 +126,12 @@ cols AS (
   SELECT a.attnum,
          a.attname,
          pg_catalog.format_type(a.atttypid, a.atttypmod) AS data_type,
-         NOT a.attnotnull AS is_nullable
+         NOT a.attnotnull AS is_nullable,
+         -- ::text keeps this a text[] the driver can decode; array_agg over the
+         -- raw `name`-typed enumlabel would come back as undecodable bytes.
+         (SELECT pg_catalog.array_agg(e.enumlabel::text ORDER BY e.enumsortorder)
+          FROM pg_catalog.pg_enum e
+          WHERE e.enumtypid = a.atttypid) AS enum_values
   FROM pg_catalog.pg_attribute a
   WHERE a.attrelid = (SELECT oid FROM rel)
     AND a.attnum > 0
@@ -157,7 +164,8 @@ SELECT c.attnum AS ordinal,
        fk.conname AS fk_name,
        fk.ref_schema AS fk_ref_schema,
        fk.ref_table AS fk_ref_table,
-       fk.ref_column AS fk_ref_column
+       fk.ref_column AS fk_ref_column,
+       c.enum_values AS enum_values
 FROM cols c
 LEFT JOIN pk ON pk.attnum = c.attnum
 LEFT JOIN fk ON fk.attnum = c.attnum

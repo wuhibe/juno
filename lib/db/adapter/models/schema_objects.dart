@@ -88,6 +88,7 @@ class DbColumn {
     required this.isPrimaryKey,
     required this.ordinalPosition,
     this.foreignKey,
+    this.enumValues,
   });
 
   /// The column name.
@@ -108,8 +109,15 @@ class DbColumn {
   /// The foreign key this column participates in, if any.
   final DbForeignKey? foreignKey;
 
+  /// The allowed labels when this column's type is an enum, in declaration
+  /// order; null for every other type. Drives the filter value picker.
+  final List<String>? enumValues;
+
   /// Whether this column references another table.
   bool get isForeignKey => foreignKey != null;
+
+  /// Whether this column's type is an enum.
+  bool get isEnum => enumValues != null;
 
   @override
   String toString() =>

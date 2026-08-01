@@ -11,6 +11,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:juno/core/errors/app_exception.dart';
 import 'package:juno/db/adapter/models/connection_config.dart';
+import 'package:juno/db/adapter/models/table_query.dart';
 import 'package:juno/db/postgres/postgres_adapter.dart';
 
 const bool _enabled = bool.fromEnvironment('JUNO_PG_IT');
@@ -102,6 +103,66 @@ void main() {
         expect(columns, isNotEmpty);
         expect(columns.map((c) => c.name), contains('relname'));
       });
+
+      test(
+        'enum columns decode to labels and report their allowed values',
+        () async {
+          await adapter.connect(_config(readOnly: false));
+          await adapter.execute('DROP TABLE IF EXISTS juno_enum_it');
+          await adapter.execute('DROP TYPE IF EXISTS juno_mood');
+          await adapter.execute(
+            "CREATE TYPE juno_mood AS ENUM ('sad', 'ok', 'happy')",
+          );
+          await adapter.execute(
+            'CREATE TABLE juno_enum_it (id int, mood juno_mood)',
+          );
+          await adapter.execute(
+            "INSERT INTO juno_enum_it VALUES (1, 'sad'), (2, 'happy')",
+          );
+
+          try {
+            // A fresh connection: the enum type map is built during connect().
+            await adapter.disconnect();
+            await adapter.connect(_config(readOnly: true));
+
+            final result = await adapter.execute(
+              'SELECT mood FROM juno_enum_it ORDER BY id',
+            );
+            expect(result.columns.single.dbType, 'juno_mood');
+            expect(result.rows.map((r) => r.single), <String>['sad', 'happy']);
+
+            final columns = await adapter.listColumns('public', 'juno_enum_it');
+            final mood = columns.firstWhere((c) => c.name == 'mood');
+            expect(mood.isEnum, isTrue);
+            expect(mood.enumValues, <String>['sad', 'ok', 'happy']);
+
+            // Filtering on an enum goes out as an untyped param and is coerced
+            // by the server.
+            final query = adapter.buildTableQuery(
+              schema: 'public',
+              table: 'juno_enum_it',
+              filters: <ColumnFilter>[
+                const ColumnFilter(
+                  column: 'mood',
+                  op: FilterOperator.eq,
+                  values: <String>['happy'],
+                ),
+              ],
+              limit: 10,
+            );
+            final filtered = await adapter.execute(
+              query.sql,
+              params: query.params,
+            );
+            expect(filtered.rowCount, 1);
+          } finally {
+            await adapter.disconnect();
+            await adapter.connect(_config(readOnly: false));
+            await adapter.execute('DROP TABLE IF EXISTS juno_enum_it');
+            await adapter.execute('DROP TYPE IF EXISTS juno_mood');
+          }
+        },
+      );
     },
     skip: _enabled
         ? false
