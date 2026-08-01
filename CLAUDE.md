@@ -146,9 +146,14 @@ mirrored from the Figma/Claude design export (`Juno Design System.html`).
 ## Releases
 
 Tag-driven: pushing `v1.2.3` builds a signed APK (tag → build name, CI run number → build number)
-and publishes `Juno-v1.2.3.apk`. Signing keys come from repository secrets; `android/key.properties`
-is gitignored and local release builds fall back to the debug key. **Every published APK must carry
-the same signature** or Android refuses the upgrade.
+and publishes `Juno-v1.2.3.apk`. **Every published APK must carry the same signature** or Android
+refuses the upgrade.
+
+Signing credentials reach Gradle through `JUNO_KEYSTORE_*` **environment variables** in CI, and
+through the gitignored `android/key.properties` locally; with neither, release builds fall back to
+the debug key. Never route a password from CI through a properties file: the shell expands `$` in an
+unquoted heredoc and `java.util.Properties` treats `\` as an escape, so the password silently
+arrives wrong.
 
 The app checks GitHub Releases on launch and offers newer builds (`core/update/`). The check must
 never throw or block — a failed lookup silently shows no banner.

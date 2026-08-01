@@ -6,16 +6,27 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Release signing. android/key.properties is gitignored and written by CI from
-// secrets; without it (a normal local checkout) release builds fall back to the
-// debug key so `flutter run --release` keeps working.
+// Release signing. CI passes the credentials as environment variables (never
+// through a properties file: the shell would expand a `$` in a password and
+// java.util.Properties would eat a backslash). Locally they come from the
+// gitignored android/key.properties. With neither, release builds fall back to
+// the debug key so `flutter run --release` keeps working.
 val keystoreProperties = Properties().apply {
     val propertiesFile = rootProject.file("key.properties")
     if (propertiesFile.exists()) {
         propertiesFile.inputStream().use { load(it) }
     }
 }
-val hasReleaseKeystore = keystoreProperties.containsKey("storeFile")
+
+fun signingValue(environmentVariable: String, property: String): String? =
+    (System.getenv(environmentVariable) ?: keystoreProperties.getProperty(property))
+        // A secret set with `echo` carries a trailing newline that would
+        // otherwise be read as part of the password.
+        ?.trim()
+        ?.takeIf { it.isNotEmpty() }
+
+val keystorePath = signingValue("JUNO_KEYSTORE_PATH", "storeFile")
+val hasReleaseKeystore = keystorePath != null
 
 android {
     namespace = "io.juno.juno"
@@ -42,10 +53,10 @@ android {
     signingConfigs {
         if (hasReleaseKeystore) {
             create("release") {
-                storeFile = file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystorePath!!)
+                storePassword = signingValue("JUNO_KEYSTORE_PASSWORD", "storePassword")
+                keyAlias = signingValue("JUNO_KEY_ALIAS", "keyAlias")
+                keyPassword = signingValue("JUNO_KEY_PASSWORD", "keyPassword")
             }
         }
     }
