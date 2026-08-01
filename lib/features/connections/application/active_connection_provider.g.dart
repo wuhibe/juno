@@ -56,7 +56,7 @@ final class ActiveConnectionProvider
   }
 }
 
-String _$activeConnectionHash() => r'3cd42d18bbe991489063e021ba497661ae59b8b4';
+String _$activeConnectionHash() => r'b1edab2eb2446a6e8b686e70c40a6a95721e4d2f';
 
 /// Owns the single active database connection and its adapter.
 ///

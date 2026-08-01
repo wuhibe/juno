@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:juno/core/theme/app_typography.dart';
 import 'package:juno/core/theme/juno_colors.dart';
 import 'package:juno/db/adapter/models/column_meta.dart';
+import 'package:juno/db/adapter/models/table_query.dart';
 import 'package:juno/features/results/domain/cell_formatter.dart';
 import 'package:trina_grid/trina_grid.dart';
 
@@ -16,6 +17,7 @@ class ResultsGrid extends StatefulWidget {
     required this.columns,
     required this.rows,
     required this.onViewCell,
+    this.onSort,
     super.key,
   });
 
@@ -27,6 +29,13 @@ class ResultsGrid extends StatefulWidget {
 
   /// Called with the column name and raw value when a cell is long-pressed.
   final void Function(String column, Object? value) onViewCell;
+
+  /// Called when a column header is tapped, with null for "no sort".
+  ///
+  /// When supplied, the caller re-queries the server and sorting only the
+  /// fetched page is suppressed — ordering one page of a paged result would
+  /// misrepresent the table.
+  final void Function(String column, SortDirection? direction)? onSort;
 
   @override
   State<ResultsGrid> createState() => _ResultsGridState();
@@ -86,10 +95,18 @@ class _ResultsGridState extends State<ResultsGrid> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).juno;
+    final onSort = widget.onSort;
     return TrinaGrid(
       columns: _columns,
       rows: _initialRows,
       onLoaded: (event) => _stateManager = event.stateManager,
+      onSorted: onSort == null
+          ? null
+          : (event) => onSort(event.column.title, switch (event.column.sort) {
+              TrinaColumnSort.ascending => SortDirection.asc,
+              TrinaColumnSort.descending => SortDirection.desc,
+              TrinaColumnSort.none => null,
+            }),
       configuration: TrinaGridConfiguration(
         style: TrinaGridStyleConfig.dark(
           gridBackgroundColor: colors.surface,

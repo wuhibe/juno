@@ -9,14 +9,14 @@ import 'package:juno/core/theme/app_typography.dart';
 import 'package:juno/core/theme/juno_colors.dart';
 import 'package:juno/db/adapter/models/schema_objects.dart';
 import 'package:juno/features/browser/application/schema_cache_provider.dart';
-import 'package:juno/features/browser/presentation/table_preview_screen.dart';
+import 'package:juno/features/browser/presentation/table_browser_screen.dart';
 
 /// The collapsible schema → tables → columns tree.
 ///
 /// Each level loads lazily on expand (via the keep-alive cache providers) and
 /// pull-to-refresh re-introspects the database.
 class SchemaBrowser extends ConsumerWidget {
-  /// Creates the browser for [connectionId] (used to route to previews).
+  /// Creates the browser for [connectionId] (used to route to table browsing).
   const SchemaBrowser({required this.connectionId, super.key});
 
   /// The active connection's id.
@@ -146,11 +146,11 @@ class _TableNodeState extends ConsumerState<_TableNode> {
     _ => Icons.table_chart_outlined,
   };
 
-  void _openPreview() {
+  void _openTable() {
     context.pushNamed(
-      AppRoute.tablePreview.name,
+      AppRoute.tableBrowser.name,
       pathParameters: <String, String>{'id': widget.connectionId},
-      extra: TablePreviewArgs(
+      extra: TableBrowserArgs(
         schema: widget.table.schema,
         table: widget.table.name,
       ),
@@ -173,7 +173,7 @@ class _TableNodeState extends ConsumerState<_TableNode> {
           monospace: true,
           trailing: widget.table.isView ? const _ViewBadge() : null,
           onChevronTap: () => setState(() => _expanded = !_expanded),
-          onTap: _openPreview,
+          onTap: _openTable,
         ),
         if (_expanded) _columns(),
       ],
